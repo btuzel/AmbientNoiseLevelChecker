@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
+import android.util.Log
 import kotlin.math.abs
 import kotlin.math.log10
 import kotlin.math.pow
@@ -12,15 +13,10 @@ class NoiseCancel {
     val noiseLevel: Double
         @SuppressLint("MissingPermission")
         get() {
-            var bufferSize = AudioRecord.getMinBufferSize(
-                44100,
-                AudioFormat.CHANNEL_IN_DEFAULT,
-                AudioFormat.ENCODING_PCM_16BIT
-            )
-            bufferSize *= 4
+            var bufferSize = 44100 * 5
             val recorder = AudioRecord(
                 MediaRecorder.AudioSource.MIC,
-                44100, AudioFormat.CHANNEL_IN_DEFAULT, AudioFormat.ENCODING_PCM_16BIT, bufferSize
+                44100, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSize
             )
             val data = ShortArray(bufferSize)
             var average = 0.0
@@ -36,9 +32,11 @@ class NoiseCancel {
                     bufferSize--
                 }
             }
+            recorder.stop()
             recorder.release()
             val audioLevel = (average / bufferSize)
             val pressureLevel = audioLevel * AUDIO_TO_PRESSURE_CONVERTER_VALUE
+            Log.d("desibellevel",(20 * log10(pressureLevel / MINIMUM_PASCAL_REFERENCE)).toString())
             return 20 * log10(pressureLevel / MINIMUM_PASCAL_REFERENCE)
         }
 
